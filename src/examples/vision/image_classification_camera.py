@@ -27,6 +27,94 @@ from aiy.vision.inference import CameraInference
 from aiy.vision.models import image_classification
 from picamera import PiCamera
 
+import gpiozero
+from aiy import pins
+
+RED = gpiozero.LED(pins.PIN_A)
+YELLOW = gpiozero.LED(pins.PIN_B)
+GREEN = gpiozero.LED(pins.PIN_C)
+BLUE = gpiozero.LED(pins.PIN_D)
+
+COMPOST = {
+    'banana',
+    'plate',
+    'bagel/beigel',
+    'guacamole',
+    'consomme',
+    'hot pot/hotpot',
+    'trifle',
+    'ice cream/icecream',
+    'ice lolly/lolly/lollipop/popsicle',
+    'French loaf',
+    'bagel/beigel',
+    'pretzel',
+    'cheeseburger',
+    'hotdog/hot dog/red hot',
+    'mashed potato',
+    'head cabbage',
+    'broccoli',
+    'cauliflower',
+    'zucchini/courgette',
+    'spaghetti squash',
+    'acorn squash',
+    'butternut squash',
+    'cucumber/cuke',
+    'artichoke/globe artichoke',
+    'bell pepper',
+    'cardoon',
+    'mushroom',
+    'Granny Smith',
+    'strawberry',
+    'orange',
+    'lemon',
+    'fig',
+    'pineapple/ananas',
+    'banana',
+    'jackfruit/jak/jack',
+    'custard apple',
+    'pomegranate',
+    'hay',
+    'carbonara',
+    'chocolate sauce/chocolate syrup',
+    'dough',
+    'meat loaf/meatloaf',
+    'pizza/pizza pie',
+    'potpie',
+    'burrito',
+}
+LANDFILL = {
+    'abacus',
+    'ballpoint/ballpoint pen/ballpen/Biro',
+    'computer keyboard/keypad',
+    'desktop computer',
+    'fountain pen',
+    'laptop/laptop computer',
+    'mouse/computer mouse',
+    'notebook/notebook computer',
+    'plastic bag',
+    'running shoe',
+    'sandal',
+}
+PAPER = {
+    'envelope',
+    'paper towel',
+}
+RECYCLING = {
+    'beer bottle',
+    'bottlecap',
+    'carton',
+    'pop bottle/soda bottle',
+    'water bottle',
+    'wine bottle',
+}
+
+def update_leds(classes):
+    (name, prob) = classes[0]
+    RED.on() if name in LANDFILL else RED.off()
+    YELLOW.on() if name in PAPER else YELLOW.off()
+    GREEN.on() if name in COMPOST else GREEN.off()
+    BLUE.on() if name in RECYCLING else BLUE.off()
+
 def classes_info(classes, count):
     return ', '.join('%s (%.2f)' % pair for pair in classes[0:count])
 
@@ -49,6 +137,7 @@ def main():
             for result in inference.run(args.num_frames):
                 classes = image_classification.get_classes(result)
                 print(classes_info(classes, args.num_objects))
+                update_leds(classes)
 
         camera.stop_preview()
 
