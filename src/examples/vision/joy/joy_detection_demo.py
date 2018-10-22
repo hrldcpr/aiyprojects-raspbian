@@ -280,9 +280,9 @@ class JoyDetector(object):
                         animator.update_joy_score(joy_score)
 
                         if joy_score > JOY_SCORE_PEAK > prev_joy_score:
-                            player.play(JOY_SOUND)
+                            pass #player.play(JOY_SOUND)
                         elif joy_score < JOY_SCORE_MIN < prev_joy_score:
-                            player.play(SAD_SOUND)
+                            pass #player.play(SAD_SOUND)
 
                         prev_joy_score = joy_score
 
