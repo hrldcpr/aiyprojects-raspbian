@@ -271,7 +271,7 @@ class JoyDetector(object):
                 prev_joy_score = 0.0
                 with CameraInference(face_detection.model()) as inference:
                     logger.info('Model loaded.')
-                    player.play(MODEL_LOAD_SOUND)
+                    #player.play(MODEL_LOAD_SOUND)
                     for i, result in enumerate(inference.run()):
                         faces = face_detection.get_faces(result)
                         photographer.update_faces(faces)
