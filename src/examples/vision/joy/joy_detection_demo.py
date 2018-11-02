@@ -255,8 +255,10 @@ class JoyDetector(object):
             # Forced sensor mode, 1640x1232, full FoV. See:
             # https://picamera.readthedocs.io/en/release-1.13/fov.html#sensor-modes
             # This is the resolution inference run on.
-            # Zoom to center 25% ROI of the full image.
-            with PiCamera(sensor_mode=4, resolution=(1640, 1232), zoom=(0.375, 0.375, 0.25, 0.25)) as camera, PrivacyLed(leds):
+            with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera, PrivacyLed(leds):
+                camera.zoom = (0.375, 0.375, 0.25, 0.25)  # Zoom to center 25% ROI of the full image
+                camera.capture('test.jpg')
+
                 def take_photo():
                     logger.info('Button pressed.')
                     player.play(BEEP_SOUND)
