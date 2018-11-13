@@ -8,7 +8,8 @@ logging.basicConfig(level=logging.INFO)
 WIDTH = 4
 HEIGHT = 4
 
-ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT) for k in range(16)}
+ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
+             for k in range(WIDTH * HEIGHT)}
 
 writers = {}
 
