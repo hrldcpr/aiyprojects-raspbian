@@ -1,0 +1,11 @@
+[Unit]
+Description=Camera Mural AI
+
+[Service]
+Type=simple
+Restart=no
+User=pi
+ExecStart=/usr/bin/python3 /home/pi/AIY-projects-python/src/examples/vision/camurai/camurai.py
+
+[Install]
+WantedBy=multi-user.target
