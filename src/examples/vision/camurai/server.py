@@ -31,7 +31,7 @@ async def leds_loop():
                     await asyncio.sleep(1.0)
                     continue
                 writer.write(bytes([0, 255, 255]))
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(0.1)
                 writer.write(bytes([0, 0, 0]))
 
 async def button_loop(reader):
