@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.INFO)
 
 WIDTH = 4
 HEIGHT = 4
+DELAY = 0.1 # seconds
 
 ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
              for k in range(WIDTH * HEIGHT)}
@@ -30,10 +31,10 @@ async def leds_loop():
                 writer = writers.get((x, y))
                 if not writer:
                     logging.warning(f'{x},{y} not connected')
-                    await asyncio.sleep(1.0)
+                    await asyncio.sleep(DELAY)
                     continue
                 writer.write(bytes([0, 255, 255]))
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(DELAY)
                 writer.write(bytes([0, 0, 0]))
 
 async def button_loop(x, y, reader, writer):
