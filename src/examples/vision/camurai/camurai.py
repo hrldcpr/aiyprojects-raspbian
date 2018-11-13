@@ -1,12 +1,14 @@
 import asyncio
 import logging
 
-import common
-
+from gpiozero import Button
 from aiy.vision.leds import Leds
+
+import common
 
 logging.basicConfig(level=logging.WARNING)
 
+BUTTON_PIN = 23
 SERVER_ADDRESS = '192.168.0.100'
 
 async def led_loop(reader):
@@ -18,7 +20,9 @@ async def led_loop(reader):
         else: leds.update(Leds.rgb_on([r, g, b]))
 
 async def button_loop(writer):
-    pass
+    button = Button(BUTTON_PIN)
+    button.when_pressed = lambda: writer.write(bytes([1]))
+    button.when_released = lambda: writer.write(bytes([0]))
 
 async def main():
     reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)

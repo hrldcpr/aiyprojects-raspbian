@@ -12,6 +12,7 @@ ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
              for k in range(WIDTH * HEIGHT)}
 
 writers = {}
+buttons = {}
 
 def neighbors(x, y):
     return filter(None, [
@@ -25,6 +26,7 @@ async def leds_loop():
     while True:
         for y in range(HEIGHT):
             for x in range(WIDTH):
+                if buttons.get((x, y)): continue
                 writer = writers.get((x, y))
                 if not writer:
                     logging.warning(f'{x},{y} not connected')
@@ -34,10 +36,16 @@ async def leds_loop():
                 await asyncio.sleep(0.1)
                 writer.write(bytes([0, 0, 0]))
 
-async def button_loop(reader):
+async def button_loop(x, y, reader, writer):
     while True:
         b, = await reader.readexactly(1)
         logging.info(f'{x},{y} sent {hex(b)}')
+        if b:
+            buttons[(x, y)] = True
+            writer.write(bytes([255, 0, 0]))
+        else:
+            buttons.pop((x, y), None)
+            writer.write(bytes([0, 0, 0]))
 
 async def connect(reader, writer):
     x = y = None
@@ -55,7 +63,7 @@ async def connect(reader, writer):
         logging.info(f'{x},{y} connected')
         writers[(x, y)] = writer
 
-        await button_loop(reader)
+        await button_loop(x, y, reader, writer)
 
     except asyncio.IncompleteReadError:
         logging.warning(f'{x},{y} disconnected')
