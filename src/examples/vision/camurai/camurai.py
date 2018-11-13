@@ -23,6 +23,7 @@ async def button_loop(writer):
     button = Button(BUTTON_PIN)
     button.when_pressed = lambda: writer.write(bytes([1]))
     button.when_released = lambda: writer.write(bytes([0]))
+    await asyncio.sleep(1.0)
 
 async def main():
     reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
