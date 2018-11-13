@@ -18,7 +18,7 @@ def when_pressed(pressed):
     if not writers:
         logging.warning('no connection')
         return
-    writers[0].write(1 if pressed else 0)
+    writers[0].write(bytes([1 if pressed else 0]))
 
 async def led_loop(reader):
     leds = Leds()
