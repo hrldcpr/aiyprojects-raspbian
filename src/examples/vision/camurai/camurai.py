@@ -13,7 +13,7 @@ async def led_loop(reader):
     leds = Leds()
     while True:
         r, g, b = await reader.readexactly(3)
-        logging.info(f'{r},{g},{b}')
+        logging.info('{},{},{}'.format(r, g, b))
         if r == g == b == 0: leds.update(Leds.rgb_off())
         else: leds.update(Leds.rgb_on([r, g, b]))
 
