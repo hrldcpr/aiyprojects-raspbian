@@ -5,7 +5,7 @@ import common
 
 from aiy.vision.leds import Leds
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 SERVER_ADDRESS = '192.168.0.100'
 

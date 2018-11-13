@@ -29,7 +29,6 @@ async def leds_loop():
                     logging.warning(f'{x},{y} not connected')
                     await asyncio.sleep(1.0)
                     continue
-                logging.info(f'{x},{y}')
                 writer.write(bytes([0, 255, 255]))
                 await asyncio.sleep(1.0)
                 writer.write(bytes([0, 0, 0]))
