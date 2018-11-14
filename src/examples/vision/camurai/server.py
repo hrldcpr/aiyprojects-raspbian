@@ -7,13 +7,12 @@ logging.basicConfig(level=logging.INFO)
 
 WIDTH = 4
 HEIGHT = 4
-DELAY = 0.1 # seconds
+DELAY = 0.2 # seconds
 
 ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
              for k in range(WIDTH * HEIGHT)}
 
 writers = {}
-buttons = {}
 
 def neighbors(x, y):
     return filter(None, [
@@ -23,30 +22,34 @@ def neighbors(x, y):
         y + 1 < HEIGHT and (x, y + 1),
     ])
 
-async def leds_loop():
-    while True:
-        for y in range(HEIGHT):
-            for x in range(WIDTH):
-                if buttons.get((x, y)): continue
-                writer = writers.get((x, y))
-                if not writer:
-                    logging.warning(f'{x},{y} not connected')
-                    await asyncio.sleep(DELAY)
-                    continue
-                writer.write(bytes([0, 255, 255]))
-                await asyncio.sleep(DELAY)
-                writer.write(bytes([0, 0, 0]))
+async def ripple(x0, y0):
+    for d in range(WIDTH + HEIGHT):
+        circle = []
+        for dx in range(d + 1):
+            dy = d - dx
+            for dx in {-dx, dx}:
+                x = x0 + dx
+                if x < 0 or x >= WIDTH: continue
+                for dy in {-dy, dy}:
+                    y = y0 + dy
+                    if y < 0 or y >= HEIGHT: continue
+                    writer = writers.get((x, y))
+                    if not writer:
+                        logging.warning(f'{x},{y} not connected')
+                        continue
+                    circle.append(writer)
 
-async def button_loop(x, y, reader, writer):
+        for writer in circle:
+            writer.write(bytes([255 // (d + 1)**2, 0, 0]))
+        await asyncio.sleep(DELAY)
+        for writer in circle:
+            writer.write(bytes([0, 0, 0]))
+
+async def button_loop(x, y, reader):
     while True:
         b, = await reader.readexactly(1)
         logging.info(f'{x},{y} sent {hex(b)}')
-        if b:
-            buttons[(x, y)] = True
-            writer.write(bytes([255, 0, 0]))
-        else:
-            buttons.pop((x, y), None)
-            writer.write(bytes([0, 0, 0]))
+        if b: asyncio.create_task(ripple(x, y))
 
 async def connect(reader, writer):
     x = y = None
@@ -64,7 +67,9 @@ async def connect(reader, writer):
         logging.info(f'{x},{y} connected')
         writers[(x, y)] = writer
 
-        await button_loop(x, y, reader, writer)
+        writer.write(bytes([0, 255, 255]))
+
+        await button_loop(x, y, reader)
 
     except asyncio.IncompleteReadError:
         logging.warning(f'{x},{y} disconnected')
@@ -74,9 +79,6 @@ async def main():
     server = await asyncio.start_server(connect, '0.0.0.0', common.SERVER_PORT)
     async with server:
         logging.info(f'listening')
-        await asyncio.gather(
-            server.serve_forever(),
-            leds_loop(),
-        )
+        await server.serve_forever()
 
 asyncio.run(main())
