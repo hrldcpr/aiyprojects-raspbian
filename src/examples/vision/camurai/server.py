@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 WIDTH = 4
 HEIGHT = 4
 DELAY = 0.2 # seconds
-NOTES = ['C4', 'D4', 'E4', 'F4', 'G4', 'A5', 'B5', 'C5']
+NOTES = ['C4q', 'D4q', 'E4q', 'F4q', 'G4q', 'A5q', 'B5q', 'C5q']
 
 ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
              for k in range(WIDTH * HEIGHT)}
