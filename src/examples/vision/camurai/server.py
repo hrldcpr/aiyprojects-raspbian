@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.INFO)
 WIDTH = 4
 HEIGHT = 4
 DELAY = 0.2 # seconds
+NOTES = ['C4', 'D4', 'E4', 'F4', 'G4', 'A5', 'B5', 'C5']
 
 ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
              for k in range(WIDTH * HEIGHT)}
@@ -21,6 +22,12 @@ def neighbors(x, y):
         y > 0 and (x, y - 1),
         y + 1 < HEIGHT and (x, y + 1),
     ])
+
+def write_buzzer(writer, note):
+    writer.write(common.BUZZER_KIND + note.encode())
+
+def write_led(writer, r, g, b):
+    writer.write(common.LED_KIND + bytes([r, g, b]))
 
 async def ripple(x0, y0):
     for d in range(WIDTH + HEIGHT):
@@ -40,10 +47,11 @@ async def ripple(x0, y0):
                     circle.append(writer)
 
         for writer in circle:
-            writer.write(bytes([255 // (d + 1)**2, 0, 0]))
+            write_led(writer, 255 // (d + 1)**2, 0, 0)
+            write_buzzer(writer, NOTES[d])
         await asyncio.sleep(DELAY)
         for writer in circle:
-            writer.write(bytes([0, 0, 0]))
+            write_led(writer, 0, 0, 0)
 
 async def button_loop(x, y, reader):
     while True:
@@ -67,7 +75,7 @@ async def connect(reader, writer):
         logging.info(f'{x},{y} connected')
         writers[(x, y)] = writer
 
-        writer.write(bytes([0, 255, 255]))
+        write_led(writer, 0, 255, 255)
 
         await button_loop(x, y, reader)
 

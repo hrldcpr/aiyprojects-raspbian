@@ -1,1 +1,3 @@
+BUZZER_KIND = b'b'
+LED_KIND = b'l'
 SERVER_PORT = 8888
