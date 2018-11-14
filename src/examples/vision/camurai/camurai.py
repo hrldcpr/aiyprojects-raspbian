@@ -28,12 +28,12 @@ async def listen(reader):
     while True:
         kind = await reader.readexactly(1)
 
-        if kind === common.BUZZER_KIND:
+        if kind == common.BUZZER_KIND:
             note = await reader.readexactly(3)
             logging.info('buzzer {}'.format(note))
             buzzer.play(note.decode())
 
-        elif kind === common.LED_KIND:
+        elif kind == common.LED_KIND:
             r, g, b = await reader.readexactly(3)
             logging.info('led {},{},{}'.format(r, g, b))
             if r == g == b == 0: leds.update(Leds.rgb_off())
