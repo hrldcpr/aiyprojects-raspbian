@@ -15,7 +15,7 @@ SERVER_ADDRESS = '192.168.0.100'
 
 writers = []
 
-def when_pressed(pressed):
+async def when_pressed(pressed):
     logging.info('pressed {}'.format(pressed))
     if not writers:
         logging.warning('no connection')
@@ -47,11 +47,11 @@ async def main():
         # TODO button_loop(writer),
     )
 
-# TODO something more async / more threadsafe than this...
-button = Button(BUTTON_PIN)
-button.when_pressed = lambda: when_pressed(1)
-button.when_released = lambda: when_pressed(0)
-
 loop = asyncio.get_event_loop()
+
+button = Button(BUTTON_PIN)
+button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(when_pressed(1), loop)
+button.when_released = lambda: asyncio.run_coroutine_threadsafe(when_pressed(0), loop)
+
 loop.run_until_complete(main())
 loop.close()
