@@ -39,8 +39,8 @@ async def listen(reader):
             if r == g == b == 0: leds.update(Leds.rgb_off())
             else: leds.update(Leds.rgb_on([r, g, b]))
 
+loop = asyncio.get_event_loop() # main thread's event loop
 def setup_button():
-    loop = asyncio.get_event_loop() # main thread's event loop
     button = Button(BUTTON_PIN)
     button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(button_pressed(), loop)
     button.when_released = lambda: asyncio.run_coroutine_threadsafe(button_pressed(False), loop)
