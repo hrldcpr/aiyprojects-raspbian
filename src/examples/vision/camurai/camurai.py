@@ -39,17 +39,16 @@ async def listen(reader):
             if r == g == b == 0: leds.update(Leds.rgb_off())
             else: leds.update(Leds.rgb_on([r, g, b]))
 
-loop = asyncio.get_event_loop() # main thread's event loop
 def setup_button():
     button = Button(BUTTON_PIN)
+    loop = asyncio.get_event_loop() # main thread's event loop
     button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(button_pressed(), loop)
     button.when_released = lambda: asyncio.run_coroutine_threadsafe(button_pressed(False), loop)
 
 async def main():
     reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
     writers.append(writer)
-
-    setup_button()
     await listen(reader)
 
+setup_button()
 asyncio.get_event_loop().run_until_complete(main())
