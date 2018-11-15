@@ -22,6 +22,7 @@ JOY_SCORE_MIN = 0.10
 SERVER_ADDRESS = '192.168.0.100'
 
 done = threading.Event()
+io_loop = asyncio.get_event_loop() # main thread's event loop
 writers = []
 
 class MovingAverage(object):
@@ -55,7 +56,7 @@ async def joy_detected(detected):
         return
     writers[0].write(common.JOY_DETECTED if detected else common.JOY_ENDED)
 
-def camera_loop(io_loop):
+def camera_loop():
     with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
         joy_score_moving_average = MovingAverage(10)
         prev_joy_score = 0.0
@@ -110,12 +111,10 @@ def main():
     signal.signal(signal.SIGINT, lambda signal, frame: stop())
     signal.signal(signal.SIGTERM, lambda signal, frame: stop())
 
-    io_loop = asyncio.get_event_loop() # main thread's event loop
-
     button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
     setup_button(button, io_loop)
 
-    camera_thread = threading.Thread(target=camera_loop, args=(io_loop,))
+    camera_thread = threading.Thread(target=camera_loop)
     camera_thread.start()
 
     io_loop.run_until_complete(async_main())
