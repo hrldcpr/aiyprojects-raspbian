@@ -48,8 +48,7 @@ def setup_button():
 async def main():
     reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
     writers.append(writer)
-
-    setup_button()
     await listen(reader)
 
+setup_button()
 loop.run_until_complete(main())
