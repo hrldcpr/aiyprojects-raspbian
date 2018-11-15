@@ -61,6 +61,9 @@ def camera_loop(io_loop):
         prev_joy_score = 0.0
         with CameraInference(face_detection.model()) as inference:
             logging.info('Model loaded.')
+            logging.info('sending false joy!')
+            asyncio.run_coroutine_threadsafe(joy_detected(True), io_loop)
+            logging.info('sent false joy!')
             for i, result in enumerate(inference.run()):
                 faces = face_detection.get_faces(result)
 
