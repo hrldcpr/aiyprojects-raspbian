@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 BUZZER_PIN = 22
 BUTTON_PIN = 23
-JOY_SCORE_PEAK = 0.85
+JOY_SCORE_PEAK = 0.50 #0.85
 JOY_SCORE_MIN = 0.10
 SERVER_ADDRESS = '192.168.0.100'
 
@@ -67,8 +67,10 @@ def camera_loop(io_loop):
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
 
                 if joy_score > JOY_SCORE_PEAK > prev_joy_score:
+                    logging.info('joy detected')
                     asyncio.run_coroutine_threadsafe(joy_detected(True), io_loop)
                 elif joy_score < JOY_SCORE_MIN < prev_joy_score:
+                    logging.info('joy ended')
                     asyncio.run_coroutine_threadsafe(joy_detected(False), io_loop)
 
                 prev_joy_score = joy_score
