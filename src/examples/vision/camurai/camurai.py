@@ -52,7 +52,7 @@ def camera_loop(io_loop):
         joy_score_moving_average = MovingAverage(10)
         prev_joy_score = 0.0
         with CameraInference(face_detection.model()) as inference:
-            logger.info('Model loaded.')
+            logging.info('Model loaded.')
             for i, result in enumerate(inference.run()):
                 faces = face_detection.get_faces(result)
 
@@ -101,7 +101,7 @@ def main():
     camera_thread = threading.Thread(target=camera_loop, args=(io_loop,))
     camera_thread.start()
 
-    io_loop.run_until_complete(main())
+    io_loop.run_until_complete(async_main())
     camera_thread.join()
 
 main()
