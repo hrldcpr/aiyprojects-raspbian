@@ -57,7 +57,6 @@ def camera_loop(io_loop):
                 faces = face_detection.get_faces(result)
 
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
-                animator.update_joy_score(joy_score)
 
                 if joy_score > JOY_SCORE_PEAK > prev_joy_score:
                     asyncio.run_coroutine_threadsafe(joy_detected(True), io_loop)
