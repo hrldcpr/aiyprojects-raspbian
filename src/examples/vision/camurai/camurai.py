@@ -97,7 +97,7 @@ def main():
     button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
     setup_button(button, io_loop)
 
-    camera_thread = new Thread(target=camera_loop, args=(io_loop,))
+    camera_thread = Thread(target=camera_loop, args=(io_loop,))
     camera_thread.start()
 
     io_loop.run_until_complete(main())
