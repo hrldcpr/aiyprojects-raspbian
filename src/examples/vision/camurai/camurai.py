@@ -1,6 +1,7 @@
 import asyncio
 import collections
 import logging
+import threading
 
 from aiy.toneplayer import TonePlayer
 from aiy.vision.inference import CameraInference
@@ -97,7 +98,7 @@ def main():
     button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
     setup_button(button, io_loop)
 
-    camera_thread = Thread(target=camera_loop, args=(io_loop,))
+    camera_thread = threading.Thread(target=camera_loop, args=(io_loop,))
     camera_thread.start()
 
     io_loop.run_until_complete(main())
