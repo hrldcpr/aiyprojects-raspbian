@@ -1,6 +1,7 @@
 import asyncio
 import collections
 import logging
+import signal
 import threading
 
 from aiy.toneplayer import TonePlayer
@@ -20,6 +21,7 @@ JOY_SCORE_PEAK = 0.85
 JOY_SCORE_MIN = 0.10
 SERVER_ADDRESS = '192.168.0.100'
 
+done = threading.Event()
 writers = []
 
 class MovingAverage(object):
@@ -34,6 +36,10 @@ def average_joy_score(faces):
     if faces:
         return sum([face.joy_score for face in faces]) / len(faces)
     return 0.0
+
+def stop():
+    logging.info('Stopping...')
+    done.set()
 
 async def button_pressed(pressed):
     logging.info('pressed {}'.format(pressed))
@@ -67,6 +73,8 @@ def camera_loop(io_loop):
 
                 prev_joy_score = joy_score
 
+                if done.is_set(): break
+
 async def listen(reader):
     leds = Leds()
     buzzer = TonePlayer(BUZZER_PIN)
@@ -94,6 +102,9 @@ async def async_main():
     await listen(reader)
 
 def main():
+    signal.signal(signal.SIGINT, lambda signal, frame: stop())
+    signal.signal(signal.SIGTERM, lambda signal, frame: stop())
+
     io_loop = asyncio.get_event_loop() # main thread's event loop
 
     button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
@@ -103,6 +114,7 @@ def main():
     camera_thread.start()
 
     io_loop.run_until_complete(async_main())
+    stop()
     camera_thread.join()
 
 main()
