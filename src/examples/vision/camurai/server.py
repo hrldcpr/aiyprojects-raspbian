@@ -67,14 +67,14 @@ async def connect(reader, writer):
         x, y = xy
 
         if (x, y) in writers:
-            logging.warn(f'{x},{y} already connected')
+            logging.warning(f'{x},{y} already connected')
             return
         logging.info(f'{x},{y} connected')
         writers[(x, y)] = writer
 
         write_led(writer, 0, 255, 255)
 
-        await listen(x, y, reader)
+        await listen(x, y, reader, writer)
 
     except asyncio.IncompleteReadError:
         logging.warning(f'{x},{y} disconnected')
