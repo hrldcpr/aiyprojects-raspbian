@@ -42,10 +42,7 @@ async def listen(reader):
 async def main():
     reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
     writers.append(writer)
-    await asyncio.gather(
-        listen(reader),
-        # TODO button_loop(writer),
-    )
+    await listen(reader)
 
 loop = asyncio.get_event_loop()
 
