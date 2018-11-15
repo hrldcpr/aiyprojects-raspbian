@@ -13,10 +13,10 @@ BUZZER_PIN = 22
 BUTTON_PIN = 23
 SERVER_ADDRESS = '192.168.0.100'
 
+button = Button(BUTTON_PIN) # global lest it be garbage-collected
 writers = []
-loop = asyncio.get_event_loop() # main thread's event loop
 
-async def button_pressed(pressed=True):
+async def button_pressed(pressed):
     logging.info('pressed {}'.format(pressed))
     if not writers:
         logging.warning('no connection')
@@ -41,14 +41,15 @@ async def listen(reader):
             else: leds.update(Leds.rgb_on([r, g, b]))
 
 def setup_button():
-    button = Button(BUTTON_PIN)
-    button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(button_pressed(), loop)
+    loop = asyncio.get_event_loop() # main thread's event loop
+    button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(button_pressed(True), loop)
     button.when_released = lambda: asyncio.run_coroutine_threadsafe(button_pressed(False), loop)
 
 async def main():
     reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
     writers.append(writer)
+
+    setup_button()
     await listen(reader)
 
-setup_button()
-loop.run_until_complete(main())
+asyncio.get_event_loop().run_until_complete(main())
