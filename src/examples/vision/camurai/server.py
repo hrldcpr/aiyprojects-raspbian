@@ -15,14 +15,6 @@ ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
 
 writers = {}
 
-def neighbors(x, y):
-    return filter(None, [
-        x > 0 and (x - 1, y),
-        x + 1 < WIDTH and (x + 1, y),
-        y > 0 and (x, y - 1),
-        y + 1 < HEIGHT and (x, y + 1),
-    ])
-
 def write_buzzer(writer, note):
     writer.write(common.BUZZER_KIND + note.encode())
 
@@ -53,11 +45,16 @@ async def ripple(x0, y0):
         for writer in circle:
             write_led(writer, 0, 0, 0)
 
-async def button_loop(x, y, reader):
+async def listen(x, y, reader, writer):
     while True:
-        b, = await reader.readexactly(1)
-        logging.info(f'{x},{y} sent {hex(b)}')
-        if b: asyncio.create_task(ripple(x, y))
+        b = await reader.readexactly(1)
+        logging.info(f'{x},{y} sent {b}')
+        if b == common.BUTTON_PRESSED:
+            asyncio.create_task(ripple(x, y))
+        elif b == common.JOY_DETECTED:
+            write_led(writer, 128, 255, 255)
+        elif b == common.JOY_ENDED:
+            write_led(writer, 128, 128, 0)
 
 async def connect(reader, writer):
     x = y = None
@@ -77,7 +74,7 @@ async def connect(reader, writer):
 
         write_led(writer, 0, 255, 255)
 
-        await button_loop(x, y, reader)
+        await listen(x, y, reader)
 
     except asyncio.IncompleteReadError:
         logging.warning(f'{x},{y} disconnected')
