@@ -15,7 +15,7 @@ SERVER_ADDRESS = '192.168.0.100'
 
 writers = []
 
-async def when_pressed(pressed):
+async def button_pressed(pressed=True):
     logging.info('pressed {}'.format(pressed))
     if not writers:
         logging.warning('no connection')
@@ -39,16 +39,17 @@ async def listen(reader):
             if r == g == b == 0: leds.update(Leds.rgb_off())
             else: leds.update(Leds.rgb_on([r, g, b]))
 
+def setup_button():
+    loop = asyncio.get_event_loop() # main thread's event loop
+    button = Button(BUTTON_PIN)
+    button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(button_pressed(), loop)
+    button.when_released = lambda: asyncio.run_coroutine_threadsafe(button_pressed(False), loop)
+
 async def main():
     reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
     writers.append(writer)
+
+    setup_button()
     await listen(reader)
 
-loop = asyncio.get_event_loop()
-
-button = Button(BUTTON_PIN)
-button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(when_pressed(1), loop)
-button.when_released = lambda: asyncio.run_coroutine_threadsafe(when_pressed(0), loop)
-
-loop.run_until_complete(main())
-loop.close()
+asyncio.get_event_loop().run_until_complete(main())
