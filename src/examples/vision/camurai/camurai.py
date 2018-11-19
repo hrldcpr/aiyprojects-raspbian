@@ -55,14 +55,14 @@ async def joy_detected(detected):
         return
     writers[0].write(common.JOY_DETECTED if detected else common.JOY_ENDED)
 
-def camera_loop(io_loop):
+async def camera_loop():
     with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
         joy_score_moving_average = MovingAverage(10)
         prev_joy_score = 0.0
         with CameraInference(face_detection.model()) as inference:
             logging.info('Model loaded.')
             logging.info('sending false joy!')
-            asyncio.run_coroutine_threadsafe(joy_detected(True), io_loop)
+            await joy_detected(True)
             logging.info('sent false joy!')
             for i, result in enumerate(inference.run()):
                 faces = face_detection.get_faces(result)
@@ -71,14 +71,16 @@ def camera_loop(io_loop):
 
                 if joy_score > JOY_SCORE_PEAK > prev_joy_score:
                     logging.info('joy detected')
-                    asyncio.run_coroutine_threadsafe(joy_detected(True), io_loop)
+                    await joy_detected(True)
                 elif joy_score < JOY_SCORE_MIN < prev_joy_score:
                     logging.info('joy ended')
-                    asyncio.run_coroutine_threadsafe(joy_detected(False), io_loop)
+                    await joy_detected(False)
 
                 prev_joy_score = joy_score
 
                 if done.is_set(): break
+
+                await asyncio.sleep(0)
 
 async def listen(reader):
     leds = Leds()
@@ -104,7 +106,10 @@ def setup_button(button, io_loop):
 async def async_main():
     reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
     writers.append(writer)
-    await listen(reader)
+    await asyncio.gather(
+        listen(reader),
+        camera_loop()
+    )
 
 def main():
     signal.signal(signal.SIGINT, lambda signal, frame: stop())
@@ -115,8 +120,8 @@ def main():
     button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
     setup_button(button, io_loop)
 
-    camera_thread = threading.Thread(target=camera_loop, args=(io_loop,))
-    camera_thread.start()
+    # camera_thread = threading.Thread(target=camera_loop, args=(io_loop,))
+    # camera_thread.start()
 
     io_loop.run_until_complete(async_main())
     stop()
