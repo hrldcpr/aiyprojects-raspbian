@@ -49,7 +49,7 @@ async def button_pressed(pressed):
     writers[0].write(common.BUTTON_PRESSED if pressed else common.BUTTON_RELEASED)
 
 async def joy_detected(detected):
-    logging.info('joy {}'.format(pressed))
+    logging.info('joy {}'.format(detected))
     if not writers:
         logging.warning('no connection')
         return
