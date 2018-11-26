@@ -51,7 +51,7 @@ async def button_pressed(pressed):
 prev_joy = None
 async def joy_detected(joy):
     global prev_joy
-    joy = Math.round(joy * 255)
+    joy = round(joy * 255)
     if joy == prev_joy: return
     prev_joy = joy
 
