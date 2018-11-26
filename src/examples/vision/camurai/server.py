@@ -51,6 +51,8 @@ async def listen(x, y, reader, writer):
         if b == common.BUTTON_PRESSED:
             logging.info(f'{x},{y} sent button press')
             asyncio.create_task(ripple(x, y))
+        elif b == common.BUTTON_RELEASED:
+            logging.info(f'{x},{y} sent button release')
         elif b == common.JOY_KIND:
             joy, = await reader.readexactly(1)
             logging.debug(f'{x},{y} sent joy {joy}')
