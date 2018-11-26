@@ -10,7 +10,6 @@ from aiy.vision.inference import CameraInference
 from aiy.vision.leds import Leds
 from aiy.vision.models import face_detection
 from gpiozero import Button
-from picamera import PiCamera
 
 import common
 
@@ -64,35 +63,26 @@ async def joy_detected(joy):
     writer.write(common.JOY_KIND + bytes([joy]))
 
 async def camera_loop():
-    with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
-        camera.capture('/home/pi/capture0.jpg')
-        camera.zoom = ((1 - ROI) / 2, (1 - ROI) / 2, ROI, ROI)
-        joy_score_moving_average = MovingAverage(10)
-        prev_joy_score = 0.0
-        with CameraInference(face_detection.model()) as inference:
-            logging.info('Model loaded.')
-            captured = False
-            for i, result in enumerate(inference.run()):
-                if i == 0: start_time = time.time()
-                elif not captured and time.time() > start_time + 5:
-                    camera.capture('/home/pi/capture5.jpg')
-                    captured = True
+    joy_score_moving_average = MovingAverage(10)
+    prev_joy_score = 0.0
+    with CameraInference(face_detection.model()) as inference:
+        logging.info('Model loaded.')
+        for i, result in enumerate(inference.run()):
+            faces = face_detection.get_faces(result)
 
-                faces = face_detection.get_faces(result)
+            joy_score = joy_score_moving_average.next(average_joy_score(faces))
+            await joy_detected(joy_score)
 
-                joy_score = joy_score_moving_average.next(average_joy_score(faces))
-                await joy_detected(joy_score)
+            # if joy_score > JOY_SCORE_PEAK > prev_joy_score:
+            #     logging.info('joy detected')
+            # elif joy_score < JOY_SCORE_MIN < prev_joy_score:
+            #     logging.info('joy ended')
 
-                # if joy_score > JOY_SCORE_PEAK > prev_joy_score:
-                #     logging.info('joy detected')
-                # elif joy_score < JOY_SCORE_MIN < prev_joy_score:
-                #     logging.info('joy ended')
+            prev_joy_score = joy_score
 
-                prev_joy_score = joy_score
+            if done.is_set(): break
 
-                if done.is_set(): break
-
-                await asyncio.sleep(0)
+            await asyncio.sleep(0)
 
 async def listen(reader):
     leds = Leds()
