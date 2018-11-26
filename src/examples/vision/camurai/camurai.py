@@ -97,7 +97,7 @@ async def listen(reader):
 
         elif kind == common.LED_KIND:
             r, g, b = await reader.readexactly(3)
-            logging.info('led {},{},{}'.format(r, g, b))
+            logging.debug('led {},{},{}'.format(r, g, b))
             if r == g == b == 0: leds.update(Leds.rgb_off())
             else: leds.update(Leds.rgb_on([r, g, b]))
 
