@@ -3,7 +3,6 @@ import collections
 import logging
 import signal
 import threading
-import time
 
 from aiy.toneplayer import TonePlayer
 from aiy.vision.inference import CameraInference
@@ -82,10 +81,6 @@ async def camera_loop():
 
                 prev_joy_score = joy_score
 
-                if button.is_pressed:
-                    logging.info('capturing...')
-                    camera.capture('capture-{}.jpg'.format(round(time.time())))
-
                 if done.is_set(): break
 
                 await asyncio.sleep(0)
@@ -119,13 +114,13 @@ async def async_main():
         camera_loop()
     )
 
-button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
 def main():
     signal.signal(signal.SIGINT, lambda signal, frame: stop())
     signal.signal(signal.SIGTERM, lambda signal, frame: stop())
 
     io_loop = asyncio.get_event_loop() # main thread's event loop
 
+    button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
     setup_button(button, io_loop)
 
     # camera_thread = threading.Thread(target=camera_loop, args=(io_loop,))
