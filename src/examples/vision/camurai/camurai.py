@@ -64,12 +64,19 @@ async def joy_detected(joy):
 
 async def camera_loop():
     with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
+        camera.capture('capture0.jpg')
         camera.zoom = ((1 - ROI) / 2, (1 - ROI) / 2, ROI, ROI)
         joy_score_moving_average = MovingAverage(10)
         prev_joy_score = 0.0
         with CameraInference(face_detection.model()) as inference:
             logging.info('Model loaded.')
+            captured = False
             for i, result in enumerate(inference.run()):
+                if i == 0: start_time = time.time()
+                elif not captured and time.time() > start_time + 5:
+                    camera.capture('capture5.jpg')
+                    captured = True
+
                 faces = face_detection.get_faces(result)
 
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
