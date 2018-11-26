@@ -3,6 +3,7 @@ import collections
 import logging
 import signal
 import threading
+import time
 
 from aiy.toneplayer import TonePlayer
 from aiy.vision.inference import CameraInference
