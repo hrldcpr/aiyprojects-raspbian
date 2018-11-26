@@ -19,6 +19,7 @@ BUZZER_PIN = 22
 BUTTON_PIN = 23
 JOY_SCORE_PEAK = 0.50 #0.85
 JOY_SCORE_MIN = 0.10
+ROI = 0.25
 SERVER_ADDRESS = '192.168.0.100'
 
 done = threading.Event()
@@ -63,7 +64,7 @@ async def joy_detected(joy):
 
 async def camera_loop():
     with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
-        camera.zoom = (0.25, 0.25, 0.5, 0.5)
+        camera.zoom = ((1 - ROI) / 2, (1 - ROI) / 2, ROI, ROI)
         joy_score_moving_average = MovingAverage(10)
         prev_joy_score = 0.0
         with CameraInference(face_detection.model()) as inference:
