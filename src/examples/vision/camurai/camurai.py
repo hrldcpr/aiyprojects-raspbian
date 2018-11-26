@@ -22,7 +22,7 @@ JOY_SCORE_MIN = 0.10
 SERVER_ADDRESS = '192.168.0.100'
 
 done = threading.Event()
-writers = []
+writer = None
 
 class MovingAverage(object):
     def __init__(self, size):
@@ -43,17 +43,23 @@ def stop():
 
 async def button_pressed(pressed):
     logging.info('pressed {}'.format(pressed))
-    if not writers:
+    if not writer:
         logging.warning('no connection')
         return
-    writers[0].write(common.BUTTON_PRESSED if pressed else common.BUTTON_RELEASED)
+    writer.write(common.BUTTON_PRESSED if pressed else common.BUTTON_RELEASED)
 
-async def joy_detected(detected):
-    logging.info('joy {}'.format(detected))
-    if not writers:
+prev_joy = None
+async def joy_detected(joy):
+    global prev_joy
+    joy = Math.round(joy * 255)
+    if joy == prev_joy: return
+    prev_joy = joy
+
+    logging.debug('joy {}'.format(joy))
+    if not writer:
         logging.warning('no connection')
         return
-    writers[0].write(common.JOY_DETECTED if detected else common.JOY_ENDED)
+    writer.write(common.JOY_KIND + bytes([joy]))
 
 async def camera_loop():
     with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
@@ -61,20 +67,16 @@ async def camera_loop():
         prev_joy_score = 0.0
         with CameraInference(face_detection.model()) as inference:
             logging.info('Model loaded.')
-            logging.info('sending false joy!')
-            await joy_detected(True)
-            logging.info('sent false joy!')
             for i, result in enumerate(inference.run()):
                 faces = face_detection.get_faces(result)
 
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
+                await joy_detected(joy_score)
 
-                if joy_score > JOY_SCORE_PEAK > prev_joy_score:
-                    logging.info('joy detected')
-                    await joy_detected(True)
-                elif joy_score < JOY_SCORE_MIN < prev_joy_score:
-                    logging.info('joy ended')
-                    await joy_detected(False)
+                # if joy_score > JOY_SCORE_PEAK > prev_joy_score:
+                #     logging.info('joy detected')
+                # elif joy_score < JOY_SCORE_MIN < prev_joy_score:
+                #     logging.info('joy ended')
 
                 prev_joy_score = joy_score
 
@@ -104,8 +106,8 @@ def setup_button(button, io_loop):
     button.when_released = lambda: asyncio.run_coroutine_threadsafe(button_pressed(False), io_loop)
 
 async def async_main():
+    global writer
     reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
-    writers.append(writer)
     await asyncio.gather(
         listen(reader),
         camera_loop()

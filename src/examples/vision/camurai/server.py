@@ -48,13 +48,15 @@ async def ripple(x0, y0):
 async def listen(x, y, reader, writer):
     while True:
         b = await reader.readexactly(1)
-        logging.info(f'{x},{y} sent {b}')
         if b == common.BUTTON_PRESSED:
+            logging.info(f'{x},{y} sent button press')
             asyncio.create_task(ripple(x, y))
-        elif b == common.JOY_DETECTED:
-            write_led(writer, 128, 255, 255)
-        elif b == common.JOY_ENDED:
-            write_led(writer, 128, 128, 0)
+        elif b == common.JOY_KIND:
+            joy, = await reader.readexactly(1)
+            logging.debug(f'{x},{y} sent joy {joy}')
+            write_led(writer, 0, joy, joy)
+        else:
+            logging.warning(f'{x},{y} sent unknown kind {b}')
 
 async def connect(reader, writer):
     x = y = None
