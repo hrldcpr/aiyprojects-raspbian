@@ -44,6 +44,8 @@ def bounding_box_in_roi(bounding_box, roi, width, height, strict):
     right = width - left
     bottom = height - top
     x, y, w, h = bounding_box
+    logging.info('l={} x={} x+w={} r={}'.format(left, x, x+w, right))
+    logging.info('t={} y={} y+h={} b={}'.format(top, y, y+h, bottom))
     (all if strict else any)((x > left, x + w < right, y > top, y + h < bottom))
 
 def filter_faces_to_roi(faces, roi, width, height, strict=True):
