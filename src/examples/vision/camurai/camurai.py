@@ -19,7 +19,7 @@ BUZZER_PIN = 22
 BUTTON_PIN = 23
 JOY_SCORE_PEAK = 0.50 #0.85
 JOY_SCORE_MIN = 0.10
-ROI = 1 / 2
+ROI = 1 / 3
 SERVER_ADDRESS = '192.168.0.100'
 
 done = threading.Event()
