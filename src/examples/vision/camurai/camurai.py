@@ -38,16 +38,16 @@ def average_joy_score(faces):
         return sum([face.joy_score for face in faces]) / len(faces)
     return 0.0
 
-def bounding_box_in_roi(bounding_box, roi, width, height):
+def bounding_box_in_roi(bounding_box, roi, width, height, strict):
     left = width * (1 - roi) / 2
     top = height * (1 - roi) / 2
     right = width - left
     bottom = height - top
     x, y, w, h = bounding_box
-    return x > left and x + w < right and y > top and y + h < bottom
+    (all if strict else any)((x > left, x + w < right, y > top, y + h < bottom))
 
-def filter_faces_to_roi(faces, roi, width, height):
-    return [face for face in faces if bounding_box_in_roi(face.bounding_box, roi, width, height)]
+def filter_faces_to_roi(faces, roi, width, height, strict=True):
+    return [face for face in faces if bounding_box_in_roi(face.bounding_box, roi, width, height, strict)]
 
 def stop():
     logging.info('Stopping...')
@@ -81,7 +81,7 @@ async def camera_loop():
             logging.info('Model loaded.')
             for i, result in enumerate(inference.run()):
                 faces = face_detection.get_faces(result)
-                faces = filter_faces_to_roi(faces, ROI, result.width, result.height)
+                faces = filter_faces_to_roi(faces, ROI, result.width, result.height, strict=False)
 
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
                 await joy_detected(joy_score)
