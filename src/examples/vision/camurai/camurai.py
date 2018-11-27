@@ -78,7 +78,7 @@ async def camera_loop():
             logging.info('Model loaded.')
             for i, result in enumerate(inference.run()):
                 if button.is_pressed:
-                    console.log('ZOOM!')
+                    logging.info('ZOOM!')
                     camera.zoom = ((1 - ROI) / 2, (1 - ROI) / 2, ROI, ROI)
 
                 faces = face_detection.get_faces(result)
