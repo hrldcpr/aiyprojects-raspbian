@@ -3,7 +3,6 @@ import collections
 import logging
 import signal
 import threading
-import time
 
 from aiy.toneplayer import TonePlayer
 from aiy.vision.inference import CameraInference
@@ -20,7 +19,7 @@ BUZZER_PIN = 22
 BUTTON_PIN = 23
 JOY_SCORE_PEAK = 0.50 #0.85
 JOY_SCORE_MIN = 0.10
-ROI = 0.5
+ROI = 0.25
 SERVER_ADDRESS = '192.168.0.100'
 
 done = threading.Event()
@@ -76,15 +75,9 @@ async def camera_loop():
         prev_joy_score = 0.0
         with CameraInference(face_detection.model()) as inference:
             logging.info('Model loaded.')
-            roi = 1
             for i, result in enumerate(inference.run()):
-                if button.is_pressed:
-                    roi /= 1.1
-                    logging.info('roi={}'.format(roi))
-
-                faces0 = face_detection.get_faces(result)
-                faces = filter_faces_to_roi(faces0, roi, result.width, result.height)
-                if len(faces) != len(faces0): logging.info('filtered {} faces to {}'.format(len(faces0), len(faces)))
+                faces = face_detection.get_faces(result)
+                faces = filter_faces_to_roi(faces0, ROI, result.width, result.height)
 
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
                 await joy_detected(joy_score)
@@ -129,13 +122,13 @@ async def async_main():
         camera_loop()
     )
 
-button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
 def main():
     signal.signal(signal.SIGINT, lambda signal, frame: stop())
     signal.signal(signal.SIGTERM, lambda signal, frame: stop())
 
     io_loop = asyncio.get_event_loop() # main thread's event loop
 
+    button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
     setup_button(button, io_loop)
 
     # camera_thread = threading.Thread(target=camera_loop, args=(io_loop,))
