@@ -77,7 +77,7 @@ async def camera_loop():
             logging.info('Model loaded.')
             for i, result in enumerate(inference.run()):
                 faces = face_detection.get_faces(result)
-                faces = filter_faces_to_roi(faces0, ROI, result.width, result.height)
+                faces = filter_faces_to_roi(faces, ROI, result.width, result.height)
 
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
                 await joy_detected(joy_score)
