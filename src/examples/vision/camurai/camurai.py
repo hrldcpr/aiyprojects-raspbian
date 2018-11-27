@@ -83,7 +83,7 @@ async def camera_loop():
 
                 faces = face_detection.get_faces(result)
                 # faces = filter_faces_to_roi(faces, ROI)
-                if faces: logging.info(faces[0].bounding_box[0])
+                if faces: logging.info(faces[0].bounding_box[3])
 
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
                 await joy_detected(joy_score)
