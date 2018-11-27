@@ -20,7 +20,7 @@ BUZZER_PIN = 22
 BUTTON_PIN = 23
 JOY_SCORE_PEAK = 0.50 #0.85
 JOY_SCORE_MIN = 0.10
-ROI = 0.25
+ROI = 0.5
 SERVER_ADDRESS = '192.168.0.100'
 
 done = threading.Event()
@@ -38,6 +38,13 @@ def average_joy_score(faces):
     if faces:
         return sum([face.joy_score for face in faces]) / len(faces)
     return 0.0
+
+def bounding_box_in_roi(bounding_box, roi):
+    x, y, w, h = bounding_box
+    return x > (1 - roi) / 2 and y > (1 - roi) / 2 and w < roi and h < roi
+
+def filter_faces_to_roi(faces, roi):
+    return [face for face in faces if bounding_box_in_roi(face.bounding_box, roi)]
 
 def stop():
     logging.info('Stopping...')
@@ -65,20 +72,18 @@ async def joy_detected(joy):
 
 async def camera_loop():
     with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
-        camera.capture('/home/pi/capture0.jpg')
-        camera.zoom = ((1 - ROI) / 2, (1 - ROI) / 2, ROI, ROI)
         joy_score_moving_average = MovingAverage(10)
         prev_joy_score = 0.0
         with CameraInference(face_detection.model()) as inference:
             logging.info('Model loaded.')
-            captured = False
             for i, result in enumerate(inference.run()):
-                if i == 0: start_time = time.time()
-                elif not captured and time.time() > start_time + 5:
-                    camera.capture('/home/pi/capture5.jpg')
-                    captured = True
+                if button.is_pressed:
+                    console.log('ZOOM!')
+                    camera.zoom = ((1 - ROI) / 2, (1 - ROI) / 2, ROI, ROI)
 
                 faces = face_detection.get_faces(result)
+                # faces = filter_faces_to_roi(faces, ROI)
+                if faces: logging.info(faces[0].bounding_box[0])
 
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
                 await joy_detected(joy_score)
@@ -123,13 +128,13 @@ async def async_main():
         camera_loop()
     )
 
+button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
 def main():
     signal.signal(signal.SIGINT, lambda signal, frame: stop())
     signal.signal(signal.SIGTERM, lambda signal, frame: stop())
 
     io_loop = asyncio.get_event_loop() # main thread's event loop
 
-    button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
     setup_button(button, io_loop)
 
     # camera_thread = threading.Thread(target=camera_loop, args=(io_loop,))
