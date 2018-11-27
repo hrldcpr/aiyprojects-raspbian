@@ -39,8 +39,12 @@ def average_joy_score(faces):
     return 0.0
 
 def bounding_box_in_roi(bounding_box, roi, width, height):
+    left = width * (1 - roi) / 2
+    top = height * (1 - roi) / 2
+    right = width - left
+    bottom = height - top
     x, y, w, h = bounding_box
-    return x > width * (1 - roi) / 2 and y > height * (1 - roi) / 2 and w < width * roi and h < height * roi
+    return x > left and x + w < right and y > top and y + h < bottom
 
 def filter_faces_to_roi(faces, roi, width, height):
     return [face for face in faces if bounding_box_in_roi(face.bounding_box, roi, width, height)]
