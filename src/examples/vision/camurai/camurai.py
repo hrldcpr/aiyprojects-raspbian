@@ -79,7 +79,7 @@ async def camera_loop():
             roi = 1
             for i, result in enumerate(inference.run()):
                 if button.is_pressed:
-                    roi *= 1.1
+                    roi /= 1.1
                     logging.info('roi={}'.format(roi))
 
                 faces0 = face_detection.get_faces(result)
