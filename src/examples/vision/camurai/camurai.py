@@ -14,7 +14,7 @@ from picamera import PiCamera
 
 import common
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 BUZZER_PIN = 22
 BUTTON_PIN = 23
@@ -98,6 +98,7 @@ async def camera_loop():
                 if faces:
                     weight = max(bounding_box_weight(face.bounding_box, result.width, result.height)
                                  for face in faces)
+                    logging.debug(weight)
                     leds.update(Leds.rgb_on([0, weight*255, weight*255]))
                 else:
                     leds.update(Leds.rgb_off())
