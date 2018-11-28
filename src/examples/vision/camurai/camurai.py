@@ -99,7 +99,7 @@ async def camera_loop():
 
                 weight = max((bounding_box_weight(face.bounding_box, result.width, result.height)
                               for face in faces), default=0)
-                weight **= 2
+                weight **= 3
                 weight = face_weight_moving_average.next(weight)
                 leds.update(Leds.rgb_on([0, weight*255, weight*255]))
 
