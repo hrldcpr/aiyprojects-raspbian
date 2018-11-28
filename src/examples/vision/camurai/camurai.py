@@ -90,6 +90,7 @@ async def joy_detected(joy):
 async def camera_loop():
     with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
         joy_score_moving_average = MovingAverage(10)
+        face_weight_moving_average = MovingAverage(10)
         prev_joy_score = 0.0
         with CameraInference(face_detection.model()) as inference:
             logging.info('Model loaded.')
@@ -99,6 +100,7 @@ async def camera_loop():
                     weight = max(bounding_box_weight(face.bounding_box, result.width, result.height)
                                  for face in faces)
                     weight **= 2
+                    weight = face_weight_moving_average.next(weight)
                     logging.debug(weight)
                     leds.update(Leds.rgb_on([0, weight*255, weight*255]))
                 else:
