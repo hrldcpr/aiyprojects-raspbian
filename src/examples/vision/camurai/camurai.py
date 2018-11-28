@@ -14,10 +14,11 @@ from picamera import PiCamera
 
 import common
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 BUZZER_PIN = 22
 BUTTON_PIN = 23
+CENTER_POWER = 5
 JOY_SCORE_PEAK = 0.50 #0.85
 JOY_SCORE_MIN = 0.10
 ROI = 1 / 3
@@ -99,7 +100,7 @@ async def camera_loop():
 
                 weight = max((bounding_box_weight(face.bounding_box, result.width, result.height)
                               for face in faces), default=0)
-                weight **= 3
+                weight **= CENTER_POWER
                 weight = face_weight_moving_average.next(weight)
                 leds.update(Leds.rgb_on([0, weight*255, weight*255]))
 
