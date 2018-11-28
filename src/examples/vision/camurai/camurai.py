@@ -96,15 +96,12 @@ async def camera_loop():
             logging.info('Model loaded.')
             for i, result in enumerate(inference.run()):
                 faces = face_detection.get_faces(result)
-                if faces:
-                    weight = max(bounding_box_weight(face.bounding_box, result.width, result.height)
-                                 for face in faces)
-                    weight **= 2
-                    weight = face_weight_moving_average.next(weight)
-                    logging.debug(weight)
-                    leds.update(Leds.rgb_on([0, weight*255, weight*255]))
-                else:
-                    leds.update(Leds.rgb_off())
+
+                weight = max((bounding_box_weight(face.bounding_box, result.width, result.height)
+                              for face in faces), default=0)
+                weight **= 2
+                weight = face_weight_moving_average.next(weight)
+                leds.update(Leds.rgb_on([0, weight*255, weight*255]))
 
                 # faces = filter_faces_to_roi(faces, ROI, result.width, result.height, strict=False)
 
