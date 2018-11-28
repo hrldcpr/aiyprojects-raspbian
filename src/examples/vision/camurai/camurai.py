@@ -95,7 +95,8 @@ async def camera_loop():
             for i, result in enumerate(inference.run()):
                 faces = face_detection.get_faces(result)
                 if faces:
-                    weight = max(bounding_box_weight(face.bounding_box) for face in faces)
+                    weight = max(bounding_box_weight(face.bounding_box, result.width, result.height)
+                                 for face in faces)
                     leds.update(Leds.rgb_on([0, weight*255, weight*255]))
                 else:
                     leds.update(Leds.rgb_off())
