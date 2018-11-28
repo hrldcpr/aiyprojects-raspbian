@@ -38,6 +38,19 @@ def average_joy_score(faces):
         return sum([face.joy_score for face in faces]) / len(faces)
     return 0.0
 
+def bounding_box_center(bounding_box):
+    x, y, w, h = bounding_box
+    return x + w/2, y + h/2
+
+def bounding_box_center_distance(bounding_box, width, height):
+    x, y = bounding_box_center(bounding_box)
+    return math.hypot(x - width/2, y - height/2)
+
+def bounding_box_weight(bounding_box, width, height):
+    """varies from 1 at the center to 0 at a corner"""
+    d = bounding_box_center_distance(bounding_box, width, height)
+    return 1 - d / math.hypot(width / 2, height / 2)
+
 def bounding_box_in_roi(bounding_box, roi, width, height, strict):
     left = width * (1 - roi) / 2
     top = height * (1 - roi) / 2
@@ -81,10 +94,16 @@ async def camera_loop():
             logging.info('Model loaded.')
             for i, result in enumerate(inference.run()):
                 faces = face_detection.get_faces(result)
-                faces = filter_faces_to_roi(faces, ROI, result.width, result.height, strict=False)
+                if faces:
+                    weight = max(bounding_box_weight(face.bounding_box) for face in faces)
+                    leds.update(Leds.rgb_on([0, weight*255, weight*255]))
+                else:
+                    leds.update(Leds.rgb_off())
+
+                # faces = filter_faces_to_roi(faces, ROI, result.width, result.height, strict=False)
 
                 joy_score = joy_score_moving_average.next(average_joy_score(faces))
-                await joy_detected(joy_score)
+                # await joy_detected(joy_score)
 
                 # if joy_score > JOY_SCORE_PEAK > prev_joy_score:
                 #     logging.info('joy detected')
@@ -97,8 +116,8 @@ async def camera_loop():
 
                 await asyncio.sleep(0)
 
+leds = Leds()
 async def listen(reader):
-    leds = Leds()
     buzzer = TonePlayer(BUZZER_PIN)
     while True:
         kind = await reader.readexactly(1)
