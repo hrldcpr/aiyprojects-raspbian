@@ -24,9 +24,6 @@ JOY_SCORE_MIN = 0.10
 ROI = 1 / 3
 SERVER_ADDRESS = '192.168.0.100'
 
-done = threading.Event()
-writer = None
-
 class MovingAverage(object):
     def __init__(self, size):
         self._window = collections.deque(maxlen=size)
@@ -64,105 +61,104 @@ def bounding_box_in_roi(bounding_box, roi, width, height, strict):
 def filter_faces_to_roi(faces, roi, width, height, strict=True):
     return [face for face in faces if bounding_box_in_roi(face.bounding_box, roi, width, height, strict)]
 
-def stop():
-    logging.info('Stopping...')
-    done.set()
+class Camura:
+    def __init__(self):
+        self.done = threading.Event()
+        self.leds = Leds()
+        self.writer = None
+        self.prev_joy = None
 
-async def button_pressed(pressed):
-    logging.info('pressed {}'.format(pressed))
-    if not writer:
-        logging.warning('no connection')
-        return
-    writer.write(common.BUTTON_PRESSED if pressed else common.BUTTON_RELEASED)
+    def stop(self):
+        logging.info('Stopping...')
+        self.done.set()
 
-prev_joy = None
-async def joy_detected(joy):
-    global prev_joy
-    joy = round(joy * 255)
-    if joy == prev_joy: return
-    prev_joy = joy
+    async def button_pressed(self, pressed):
+        logging.info('pressed {}'.format(pressed))
+        if not self.writer:
+            logging.warning('no connection')
+            return
+        self.writer.write(common.BUTTON_PRESSED if pressed else common.BUTTON_RELEASED)
 
-    logging.debug('joy {}'.format(joy))
-    if not writer:
-        logging.warning('no connection')
-        return
-    writer.write(common.JOY_KIND + bytes([joy]))
+    async def joy_detected(self, joy):
+        joy = round(joy * 255)
+        if joy == self.prev_joy: return
+        self.prev_joy = joy
 
-async def camera_loop():
-    with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
-        joy_score_moving_average = MovingAverage(10)
-        face_weight_moving_average = MovingAverage(10)
-        prev_joy_score = 0.0
-        with CameraInference(face_detection.model()) as inference:
-            logging.info('Model loaded.')
-            for i, result in enumerate(inference.run()):
-                faces = face_detection.get_faces(result)
+        logging.debug('joy {}'.format(joy))
+        if not writer:
+            logging.warning('no connection')
+            return
+        writer.write(common.JOY_KIND + bytes([joy]))
 
-                weight = max((bounding_box_weight(face.bounding_box, result.width, result.height)
-                              for face in faces), default=0)
-                weight **= CENTER_POWER
-                weight = face_weight_moving_average.next(weight)
-                leds.update(Leds.rgb_on([0, weight*255, weight*255]))
+    async def camera_loop(self):
+        with PiCamera(sensor_mode=4, resolution=(1640, 1232)) as camera:
+            joy_score_moving_average = MovingAverage(10)
+            face_weight_moving_average = MovingAverage(10)
+            prev_joy_score = 0.0
+            with CameraInference(face_detection.model()) as inference:
+                logging.info('Model loaded.')
+                for i, result in enumerate(inference.run()):
+                    faces = face_detection.get_faces(result)
 
-                # faces = filter_faces_to_roi(faces, ROI, result.width, result.height, strict=False)
+                    weight = max((bounding_box_weight(face.bounding_box, result.width, result.height)
+                                  for face in faces), default=0)
+                    weight **= CENTER_POWER
+                    weight = face_weight_moving_average.next(weight)
+                    self.leds.update(Leds.rgb_on([0, weight*255, weight*255]))
 
-                joy_score = joy_score_moving_average.next(average_joy_score(faces))
-                # await joy_detected(joy_score)
+                    # faces = filter_faces_to_roi(faces, ROI, result.width, result.height, strict=False)
 
-                # if joy_score > JOY_SCORE_PEAK > prev_joy_score:
-                #     logging.info('joy detected')
-                # elif joy_score < JOY_SCORE_MIN < prev_joy_score:
-                #     logging.info('joy ended')
+                    joy_score = joy_score_moving_average.next(average_joy_score(faces))
+                    # await self.joy_detected(joy_score)
 
-                prev_joy_score = joy_score
+                    # if joy_score > JOY_SCORE_PEAK > prev_joy_score:
+                    #     logging.info('joy detected')
+                    # elif joy_score < JOY_SCORE_MIN < prev_joy_score:
+                    #     logging.info('joy ended')
 
-                if done.is_set(): break
+                    prev_joy_score = joy_score
 
-                await asyncio.sleep(0)
+                    if self.done.is_set(): break
 
-leds = Leds()
-async def listen(reader):
-    buzzer = TonePlayer(BUZZER_PIN)
-    while True:
-        kind = await reader.readexactly(1)
+                    await asyncio.sleep(0)
 
-        if kind == common.BUZZER_KIND:
-            note = await reader.readexactly(3)
-            logging.info('buzzer {}'.format(note))
-            buzzer.play(note.decode())
+    async def listen(self, reader):
+        buzzer = TonePlayer(BUZZER_PIN)
+        while True:
+            kind = await reader.readexactly(1)
 
-        elif kind == common.LED_KIND:
-            r, g, b = await reader.readexactly(3)
-            logging.debug('led {},{},{}'.format(r, g, b))
-            if r == g == b == 0: leds.update(Leds.rgb_off())
-            else: leds.update(Leds.rgb_on([r, g, b]))
+            if kind == common.BUZZER_KIND:
+                note = await reader.readexactly(3)
+                logging.info('buzzer {}'.format(note))
+                buzzer.play(note.decode())
 
-def setup_button(button, io_loop):
-    button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(button_pressed(True), io_loop)
-    button.when_released = lambda: asyncio.run_coroutine_threadsafe(button_pressed(False), io_loop)
+            elif kind == common.LED_KIND:
+                r, g, b = await reader.readexactly(3)
+                logging.debug('led {},{},{}'.format(r, g, b))
+                if r == g == b == 0: self.leds.update(Leds.rgb_off())
+                else: self.leds.update(Leds.rgb_on([r, g, b]))
 
-async def async_main():
-    global writer
-    reader, writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
-    await asyncio.gather(
-        listen(reader),
-        camera_loop()
-    )
+    def setup_button(self, button, io_loop):
+        button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(self.button_pressed(True), io_loop)
+        button.when_released = lambda: asyncio.run_coroutine_threadsafe(self.button_pressed(False), io_loop)
 
-def main():
-    signal.signal(signal.SIGINT, lambda signal, frame: stop())
-    signal.signal(signal.SIGTERM, lambda signal, frame: stop())
+    async def async_main(self):
+        reader, self.writer = await asyncio.open_connection(SERVER_ADDRESS, common.SERVER_PORT)
+        await asyncio.gather(
+            self.listen(reader),
+            self.camera_loop()
+        )
 
-    io_loop = asyncio.get_event_loop() # main thread's event loop
+    def run(self):
+        signal.signal(signal.SIGINT, lambda signal, frame: self.stop())
+        signal.signal(signal.SIGTERM, lambda signal, frame: self.stop())
 
-    button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
-    setup_button(button, io_loop)
+        io_loop = asyncio.get_event_loop() # main thread's event loop
 
-    # camera_thread = threading.Thread(target=camera_loop, args=(io_loop,))
-    # camera_thread.start()
+        button = Button(BUTTON_PIN) # keep in scope to avoid garbage-collection
+        self.setup_button(button, io_loop)
 
-    io_loop.run_until_complete(async_main())
-    stop()
-    camera_thread.join()
+        io_loop.run_until_complete(self.async_main())
+        self.stop()
 
-main()
+Camura().run()
