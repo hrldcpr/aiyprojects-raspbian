@@ -13,15 +13,19 @@ NOTES = ['C4q', 'D4q', 'E4q', 'F4q', 'G4q', 'A5q', 'B5q', 'C5q']
 ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
              for k in range(WIDTH * HEIGHT)}
 
-def write_buzzer(writer, note):
-    writer.write(common.BUZZER_KIND + note.encode())
+class Camura:
+    def __init__(self, writer):
+        self.writer = writer
 
-def write_led(writer, r, g, b):
-    writer.write(common.LED_KIND + bytes([r, g, b]))
+    def write_buzzer(self, note):
+        self.writer.write(common.BUZZER_KIND + note.encode())
+
+    def write_led(self, r, g, b):
+        self.writer.write(common.LED_KIND + bytes([r, g, b]))
 
 class Server:
     def __init__(self):
-        self.writers = {}
+        self.camuras = {}
 
     async def ripple(self, x0, y0):
         for d in range(WIDTH + HEIGHT):
@@ -34,20 +38,20 @@ class Server:
                     for dy in {-dy, dy}:
                         y = y0 + dy
                         if y < 0 or y >= HEIGHT: continue
-                        writer = self.writers.get((x, y))
-                        if not writer:
+                        camura = self.camuras.get((x, y))
+                        if not camura:
                             logging.warning(f'{x},{y} not connected')
                             continue
-                        circle.append(writer)
+                        circle.append(camura)
 
-            for writer in circle:
-                write_led(writer, 255 // (d + 1)**2, 0, 0)
-                write_buzzer(writer, NOTES[d])
+            for camura in circle:
+                camura.write_led(255 // (d + 1)**2, 0, 0)
+                camura.write_buzzer(NOTES[d])
             await asyncio.sleep(DELAY)
-            for writer in circle:
-                write_led(writer, 0, 0, 0)
+            for camura in circle:
+                camura.write_led(0, 0, 0)
 
-    async def listen(self, x, y, reader, writer):
+    async def listen(self, x, y, reader, camura):
         while True:
             b = await reader.readexactly(1)
             if b == common.BUTTON_PRESSED:
@@ -58,7 +62,7 @@ class Server:
             elif b == common.JOY_KIND:
                 joy, = await reader.readexactly(1)
                 logging.debug(f'{x},{y} sent joy {joy}')
-                write_led(writer, 0, joy, joy)
+                camura.write_led(0, joy, joy)
             else:
                 logging.warning(f'{x},{y} sent unknown kind {b}')
 
@@ -72,19 +76,19 @@ class Server:
                 return
             x, y = xy
 
-            if (x, y) in self.writers:
+            if (x, y) in self.camuras:
                 logging.warning(f'{x},{y} already connected')
-                return
             logging.info(f'{x},{y} connected')
-            self.writers[(x, y)] = writer
+            camura = Camura(writer)
+            self.camuras[(x, y)] = camura
 
-            write_led(writer, 0, 255, 255)
+            camura.write_led(0, 255, 255)
 
-            await self.listen(x, y, reader, writer)
+            await self.listen(x, y, reader, camura)
 
         except asyncio.IncompleteReadError:
             logging.warning(f'{x},{y} disconnected')
-            self.writers.pop((x, y), None)
+            self.camuras.pop((x, y), None)
 
     async def run(self):
         server = await asyncio.start_server(self.connect, '0.0.0.0', common.SERVER_PORT)
