@@ -72,7 +72,7 @@ class Server:
                 logging.warning(f'{x},{y} sent unknown kind {b}')
 
     async def connect(self, reader, writer):
-        x = y = None
+        camura = x = y = None
         try:
             address, port = writer.get_extra_info('peername')
             xy = ADDRESSES.get(address)
@@ -86,14 +86,15 @@ class Server:
                 logging.warning(f'{x},{y} already connected')
             else:
                 logging.info(f'{x},{y} connected')
+            camura.writer = writer
 
-            camura.write_color(COLORS.get(camura.order))
+            camura.write_color(camura.order is not None and COLORS[camura.order])
 
             await self.listen(x, y, reader, camura)
 
         except asyncio.IncompleteReadError:
             logging.warning(f'{x},{y} disconnected')
-            self.camuras.pop((x, y), None)
+            if camura: camura.writer = None
 
     async def run(self):
         server = await asyncio.start_server(self.connect, '0.0.0.0', common.SERVER_PORT)
