@@ -1,6 +1,5 @@
 BUTTON_PRESSED = b'B'
-BUTTON_RELEASED = b'b'
 BUZZER_KIND = b'b'
-JOY_KIND = b'j'
-LED_KIND = b'l'
+COLOR_KIND = b'c'
+
 SERVER_PORT = 8888

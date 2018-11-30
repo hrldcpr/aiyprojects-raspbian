@@ -7,62 +7,67 @@ logging.basicConfig(level=logging.INFO)
 
 WIDTH = 4
 HEIGHT = 4
-DELAY = 0.2 # seconds
-NOTES = ['C4q', 'D4q', 'E4q', 'F4q', 'G4q', 'A5q', 'B5q', 'C5q']
-
 ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
              for k in range(WIDTH * HEIGHT)}
 
+COLORS = [
+    (255, 0, 0),
+    (255, 255, 0),
+    (0, 255, 0),
+    (0, 255, 255),
+]
+NOTES = [
+    'C4q',
+    'E4q',
+    'G4q',
+    'C5q',
+]
+WIN_NOTES = 'C4eE4eG4eC5e'
+LOSE_NOTES = 'E4qE4q'
+
+LEVELS = [
+    [(0, 0), (1, 1), (2, 2), (3, 3)],
+    # TODO randomly choose four camuras for level 2
+]
+
+def byte(x):
+    return bytes((x,))
+
 class Camura:
-    def __init__(self, writer):
-        self.writer = writer
+    def __init__(self):
+        self.order = None
+        self.writer = None
 
-    def write_buzzer(self, note):
-        self.writer.write(common.BUZZER_KIND + note.encode())
+    def write(self, kind, data):
+        self.writer.write(kind + byte(len(data)) + data)
 
-    def write_led(self, r, g, b):
-        self.writer.write(common.LED_KIND + bytes([r, g, b]))
+    def write_buzzer(self, notes):
+        self.write(common.BUZZER_KIND, notes.encode())
+
+    def write_color(self, color):
+        self.write(common.COLOR_KIND, bytes(color or ()))
 
 class Server:
     def __init__(self):
-        self.camuras = {}
+        self.camuras = {(x, y): Camura()
+                        for x in range(WIDTH) for y in range(HEIGHT)}
+        self.level = -1
+        self.level_up()
 
-    async def ripple(self, x0, y0):
-        for d in range(WIDTH + HEIGHT):
-            circle = []
-            for dx in range(d + 1):
-                dy = d - dx
-                for dx in {-dx, dx}:
-                    x = x0 + dx
-                    if x < 0 or x >= WIDTH: continue
-                    for dy in {-dy, dy}:
-                        y = y0 + dy
-                        if y < 0 or y >= HEIGHT: continue
-                        camura = self.camuras.get((x, y))
-                        if not camura:
-                            logging.warning(f'{x},{y} not connected')
-                            continue
-                        circle.append(camura)
-
-            for camura in circle:
-                camura.write_led(255 // (d + 1)**2, 0, 0)
-                camura.write_buzzer(NOTES[d])
-            await asyncio.sleep(DELAY)
-            for camura in circle:
-                camura.write_led(0, 0, 0)
+    def level_up(self):
+        self.level = (self.level + 1) % len(LEVELS)
+        level = LEVELS[self.level]
+        for camura in self.camuras.values():
+            camura.order = None
+        for i, (x, y) in enumerate(level):
+            self.camuras[(x, y)].order = i
 
     async def listen(self, x, y, reader, camura):
         while True:
             b = await reader.readexactly(1)
             if b == common.BUTTON_PRESSED:
                 logging.info(f'{x},{y} sent button press')
-                asyncio.create_task(self.ripple(x, y))
-            elif b == common.BUTTON_RELEASED:
-                logging.info(f'{x},{y} sent button release')
-            elif b == common.JOY_KIND:
-                joy, = await reader.readexactly(1)
-                logging.debug(f'{x},{y} sent joy {joy}')
-                camura.write_led(0, joy, joy)
+                # TODO
             else:
                 logging.warning(f'{x},{y} sent unknown kind {b}')
 
@@ -75,14 +80,14 @@ class Server:
                 logging.warning(f'unknown address {address}')
                 return
             x, y = xy
+            camura = self.camuras[(x, y)]
 
-            if (x, y) in self.camuras:
+            if camura.writer:
                 logging.warning(f'{x},{y} already connected')
-            logging.info(f'{x},{y} connected')
-            camura = Camura(writer)
-            self.camuras[(x, y)] = camura
+            else:
+                logging.info(f'{x},{y} connected')
 
-            camura.write_led(0, 255, 255)
+            camura.write_color(COLORS.get(camura.order))
 
             await self.listen(x, y, reader, camura)
 
