@@ -30,16 +30,13 @@ LEVELS = [
     # TODO randomly choose four camuras for level 2
 ]
 
-def byte(x):
-    return bytes((x,))
-
 class Camura:
     def __init__(self):
         self.order = None
         self.writer = None
 
     def write(self, kind, data):
-        self.writer.write(kind + byte(len(data)) + data)
+        self.writer.write(kind + bytes((len(data),)) + data)
 
     def write_buzzer(self, notes):
         self.write(common.BUZZER_KIND, notes.encode())
