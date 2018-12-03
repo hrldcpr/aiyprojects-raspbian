@@ -35,7 +35,7 @@ class Camura:
         self.order = None
         self.writer = None
 
-    def write(self, kind, data):
+    def write(self, kind, data=b''):
         self.writer.write(kind + bytes((len(data),)) + data)
 
     def write_buzzer(self, notes):
@@ -44,27 +44,53 @@ class Camura:
     def write_color(self, color):
         self.write(common.COLOR_KIND, bytes(color or ()))
 
+    def write_lock(self, locked=True):
+        self.write(common.LOCK_KIND if locked else common.UNLOCK_KIND)
+
+def reset_camura(x, y, camura, level):
+    try:
+        camura.order = level.index((x, y))
+    except ValueError:
+        camura.order = None
+    if camura.writer:
+        camura.write_color(camura.order is not None and COLORS[camura.order])
+        camura.write_lock(False)
+
 class Server:
     def __init__(self):
         self.camuras = {(x, y): Camura()
                         for x in range(WIDTH) for y in range(HEIGHT)}
-        self.level = -1
-        self.level_up()
+        self.level = 0
+        self.reset_level()
 
     def level_up(self):
         self.level = (self.level + 1) % len(LEVELS)
+        reset_level()
+
+    def reset_level(self):
+        self.order = 0
         level = LEVELS[self.level]
-        for camura in self.camuras.values():
-            camura.order = None
-        for i, (x, y) in enumerate(level):
-            self.camuras[(x, y)].order = i
+        for (x, y), camura in self.camuras.items():
+            reset_camura(x, y, camura, level)
+
+    def order_up(self, camura):
+        camura.write_buzzer(NOTES[camura.order])
+        camura.write_lock()
+        self.order += 1
+        if self.order >= len(NOTES):
+            camura.write_buzzer(WIN_NOTES)
+            self.level_up()
 
     async def listen(self, x, y, reader, camura):
         while True:
             b = await reader.readexactly(1)
             if b == common.BUTTON_PRESSED:
                 logging.info(f'{x},{y} sent button press')
-                # TODO
+                if camura.order == self.order:
+                    self.order_up(camura)
+                else:
+                    camura.write_buzzer(LOSE_NOTES)
+                    self.reset_level()
             else:
                 logging.warning(f'{x},{y} sent unknown kind {b}')
 
@@ -85,7 +111,7 @@ class Server:
                 logging.info(f'{x},{y} connected')
             camura.writer = writer
 
-            camura.write_color(camura.order is not None and COLORS[camura.order])
+            reset_camura(x, y, camura, LEVELS[self.level])
 
             await self.listen(x, y, reader, camura)
 

@@ -18,8 +18,9 @@ logging.basicConfig(level=logging.INFO)
 
 BUZZER_PIN = 22
 BUTTON_PIN = 23
-CENTER_POWER = 5
 SERVER_ADDRESS = '192.168.0.100'
+
+CENTER_POWER = 5
 
 class MovingAverage(object):
     def __init__(self, size):
@@ -47,14 +48,15 @@ class Camura:
         self.done = threading.Event()
         self.leds = Leds()
         self.color = None
+        self.locked = False
         self.writer = None
 
     def stop(self):
         logging.info('Stopping...')
         self.done.set()
 
-    async def button_pressed(self):
-        # TODO only send if led is active and button is not already pressed
+    def button_pressed(self):
+        if self.locked: return
         logging.info('button pressed')
         if not self.writer:
             logging.warning('no connection')
@@ -67,7 +69,7 @@ class Camura:
             with CameraInference(face_detection.model()) as inference:
                 logging.info('Model loaded.')
                 for i, result in enumerate(inference.run()):
-                    if self.color:
+                    if self.color and not self.locked:
                         faces = face_detection.get_faces(result)
 
                         weight = max((bounding_box_weight(face.bounding_box, result.width, result.height)
@@ -94,7 +96,15 @@ class Camura:
 
             elif kind == common.COLOR_KIND:
                 self.color = data or None
+                self.locked = False
                 if not self.color: self.leds.update(Leds.rgb_off())
+
+            elif kind == common.LOCK_KIND:
+                self.locked = True
+                if self.color: self.leds.update(Leds.rgb_on(self.color))
+
+            elif kind == common.UNLOCK_KIND:
+                self.locked = False
 
             else:
                 logging.warning('unknown kind')
