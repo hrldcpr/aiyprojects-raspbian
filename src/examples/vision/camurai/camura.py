@@ -123,7 +123,5 @@ class Camura:
         button.when_pressed = lambda: asyncio.run_coroutine_threadsafe(self.button_pressed(), io_loop)
 
         io_loop.run_until_complete(self.async_main())
-        self.stop()
-        self.leds.update(Leds.rgb_on((255, 0, 0)))
 
 Camura().run()
