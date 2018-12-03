@@ -20,10 +20,9 @@ NOTES = [
     'C4q',
     'E4q',
     'G4q',
-    'C5q',
+    'C4eE4eG4eC5e'
 ]
-WIN_NOTES = 'C4eE4eG4eC5e'
-LOSE_NOTES = 'E4qE4q'
+LOSE_NOTES = 'E4qreE4qreE4q'
 
 LEVELS = [
     [(0, 0), (1, 1), (2, 2), (3, 3)],
@@ -77,7 +76,6 @@ class Server:
         camura.write_lock()
         self.order += 1
         if self.order >= len(NOTES):
-            camura.write_buzzer(WIN_NOTES)
             self.level_up()
 
     async def listen(self, x, y, reader, camura):
