@@ -44,8 +44,8 @@ class Camura:
     def write_color(self, color):
         self.write(common.COLOR_KIND, bytes(color or ()))
 
-    def write_lock(self, locked=True):
-        self.write(common.LOCK_KIND if locked else common.UNLOCK_KIND)
+    def write_lock(self):
+        self.write(common.LOCK_KIND)
 
 def reset_camura(x, y, camura, level):
     try:
@@ -54,7 +54,6 @@ def reset_camura(x, y, camura, level):
         camura.order = None
     if camura.writer:
         camura.write_color(camura.order is not None and COLORS[camura.order])
-        camura.write_lock(False)
 
 class Server:
     def __init__(self):

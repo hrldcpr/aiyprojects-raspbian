@@ -103,9 +103,6 @@ class Camura:
                 self.locked = True
                 if self.color: self.leds.update(Leds.rgb_on(self.color))
 
-            elif kind == common.UNLOCK_KIND:
-                self.locked = False
-
             else:
                 logging.warning('unknown kind')
 
