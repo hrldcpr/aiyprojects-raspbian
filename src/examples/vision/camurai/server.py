@@ -71,20 +71,18 @@ class Server:
         for (x, y), camura in self.camuras.items():
             reset_camura(x, y, camura, level)
 
-    def order_up(self, camura):
-        camura.write_lock()
-        camura.write_buzzer(NOTES[camura.order])
-        self.order += 1
-        if self.order >= len(NOTES):
-            self.level_up()
-
     async def listen(self, x, y, reader, camura):
         while True:
             b = await reader.readexactly(1)
             if b == common.BUTTON_PRESSED:
                 logging.info(f'{x},{y} sent button press')
                 if camura.order == self.order:
-                    self.order_up(camura)
+                    camura.write_lock()
+                    camura.write_buzzer(NOTES[camura.order])
+                    self.order += 1
+                    if self.order >= len(NOTES):
+                        await asyncio.sleep(1)
+                        self.level_up()
                 else:
                     camura.write_buzzer(LOSE_NOTES)
                     self.reset_level()
