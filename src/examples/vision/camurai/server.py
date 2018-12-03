@@ -22,7 +22,7 @@ NOTES = [
     'G4q',
     'C5q'
 ]
-LOSE_NOTES = 'E4e,A3q'
+FAIL_NOTES = 'E4e,A3q'
 
 LEVELS = [
     [(0, 0), (1, 1), (2, 2), (3, 3)],
@@ -84,7 +84,7 @@ class Server:
                         await asyncio.sleep(1)
                         self.level_up()
                 else:
-                    camura.write_buzzer(LOSE_NOTES)
+                    camura.write_buzzer(FAIL_NOTES)
                     self.reset_level()
             else:
                 logging.warning(f'{x},{y} sent unknown kind {b}')
