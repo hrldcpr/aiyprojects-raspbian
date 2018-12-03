@@ -72,8 +72,8 @@ class Server:
             reset_camura(x, y, camura, level)
 
     def order_up(self, camura):
-        camura.write_buzzer(NOTES[camura.order])
         camura.write_lock()
+        camura.write_buzzer(NOTES[camura.order])
         self.order += 1
         if self.order >= len(NOTES):
             self.level_up()
