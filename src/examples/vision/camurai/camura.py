@@ -55,7 +55,7 @@ class Camura:
         logging.info('Stopping...')
         self.done.set()
 
-    def button_pressed(self):
+    async def button_pressed(self):
         if self.locked: return
         logging.info('button pressed')
         if not self.writer:
