@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 
 import common
 
@@ -25,9 +26,13 @@ NOTES = [
 FAIL_NOTES = 'E4e,A3q'
 
 LEVELS = [
-    [(0, 0), (1, 1), (2, 2), (3, 3)],
-    # TODO randomly choose four camuras for level 2
+    lambda camuras: [(0, 0), (1, 1), (2, 2), (3, 3)],
+    lambda camuras: shuffled([xy for xy, camura in camuras.items() if camura.writer])[:len(NOTES)],
 ]
+
+def shuffled(xs):
+    random.shuffle(xs)
+    return xs
 
 class Camura:
     def __init__(self):
@@ -46,30 +51,31 @@ class Camura:
     def write_lock(self):
         self.write(common.LOCK_KIND)
 
-def reset_camura(x, y, camura, level):
-    try:
-        camura.order = level.index((x, y))
-    except ValueError:
-        camura.order = None
-    if camura.writer:
-        camura.write_color(camura.order is not None and COLORS[camura.order])
-
 class Server:
     def __init__(self):
         self.camuras = {(x, y): Camura()
                         for x in range(WIDTH) for y in range(HEIGHT)}
-        self.level = 0
+        self.level_index = 0
         self.reset_level()
 
+    def reset_camura(self, x, y, camura):
+        try:
+            camura.order = self.level.index((x, y))
+        except ValueError:
+            camura.order = None
+        if camura.writer:
+            camura.write_color(camura.order is not None and COLORS[camura.order])
+
     def level_up(self):
-        self.level = (self.level + 1) % len(LEVELS)
+        self.level_index = (self.level_index + 1) % len(LEVELS)
         self.reset_level()
 
     def reset_level(self):
+        self.level = LEVELS[self.level_index](self.camuras)
+        logging.info(f'level {self.level_index}: {self.level}')
         self.order = 0
-        level = LEVELS[self.level]
         for (x, y), camura in self.camuras.items():
-            reset_camura(x, y, camura, level)
+            self.reset_camura(x, y, camura)
 
     async def listen(self, x, y, reader, camura):
         while True:
@@ -107,7 +113,7 @@ class Server:
             camura.writer = writer
 
             if self.order == 0:
-                reset_camura(x, y, camura, LEVELS[self.level])
+                self.reset_camura(x, y, camura)
             else:
                 logging.warning('camura connected in middle of level, resetting level')
                 self.reset_level()
