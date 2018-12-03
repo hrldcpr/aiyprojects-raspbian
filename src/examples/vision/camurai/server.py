@@ -20,7 +20,7 @@ NOTES = [
     'C4q',
     'E4q',
     'G4q',
-    'C4e,E4e,G4e,C5q'
+    'C5q'
 ]
 LOSE_NOTES = 'E4e,A3q'
 
