@@ -21,6 +21,7 @@ BUTTON_PIN = 23
 SERVER_ADDRESS = '192.168.0.100'
 
 CENTER_POWER = 5
+MIN_WEIGHT = 0.1
 
 class MovingAverage(object):
     def __init__(self, size):
@@ -77,8 +78,11 @@ class Camura:
                         weight **= CENTER_POWER
                         weight = face_weight_moving_average.next(weight)
 
-                        r, g, b = self.color
-                        self.leds.update(Leds.rgb_on((r * weight, g * weight, b * weight)))
+                        if weight > MIN_WEIGHT:
+                            r, g, b = self.color
+                            self.leds.update(Leds.rgb_on((r * weight, g * weight, b * weight)))
+                        else:
+                            self.leds.update(Leds.rgb_off())
 
                     if self.done.is_set(): break
                     await asyncio.sleep(0)
