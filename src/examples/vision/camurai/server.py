@@ -65,7 +65,7 @@ class Server:
 
     def level_up(self):
         self.level = (self.level + 1) % len(LEVELS)
-        reset_level()
+        self.reset_level()
 
     def reset_level(self):
         self.order = 0
