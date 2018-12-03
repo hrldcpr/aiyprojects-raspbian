@@ -20,9 +20,9 @@ NOTES = [
     'C4q',
     'E4q',
     'G4q',
-    'C4eE4eG4eC5e'
+    'C4e,E4e,G4e,C5q'
 ]
-LOSE_NOTES = 'E4qreE4qreE4q'
+LOSE_NOTES = 'E4e,A3q'
 
 LEVELS = [
     [(0, 0), (1, 1), (2, 2), (3, 3)],

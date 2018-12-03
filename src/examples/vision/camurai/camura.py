@@ -92,7 +92,7 @@ class Camura:
             logging.info('received kind={} length={} data={}'.format(kind, length, data))
 
             if kind == common.BUZZER_KIND:
-                buzzer.play(data.decode())
+                buzzer.play(*data.decode().split(','))
 
             elif kind == common.COLOR_KIND:
                 self.color = data or None
