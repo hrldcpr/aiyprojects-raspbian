@@ -124,5 +124,6 @@ class Camura:
 
         io_loop.run_until_complete(self.async_main())
         self.stop()
+        self.leds.update(Leds.rgb_on((255, 0, 0)))
 
 Camura().run()
