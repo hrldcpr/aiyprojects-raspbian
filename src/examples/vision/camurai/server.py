@@ -111,7 +111,11 @@ class Server:
                 logging.info(f'{x},{y} connected')
             camura.writer = writer
 
-            reset_camura(x, y, camura, LEVELS[self.level])
+            if self.order == 0:
+                reset_camura(x, y, camura, LEVELS[self.level])
+            else:
+                logging.warning('camura connected in middle of level, resetting level')
+                self.reset_level()
 
             await self.listen(x, y, reader, camura)
 
