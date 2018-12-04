@@ -11,6 +11,7 @@ HEIGHT = 4
 ADDRESSES = {f'192.168.0.{200+k}': (k % WIDTH, k // HEIGHT)
              for k in range(WIDTH * HEIGHT)}
 
+EMPTY_COLOR = (128, 128, 128)
 COLORS = [
     (255, 0, 0),
     (255, 255, 0),
@@ -64,7 +65,7 @@ class Server:
         except ValueError:
             camura.order = None
         if camura.writer:
-            camura.write_color(camura.order is not None and COLORS[camura.order])
+            camura.write_color(EMPTY_COLOR if camura.order is None else COLORS[camura.order])
 
     def level_up(self):
         self.level_index = (self.level_index + 1) % len(LEVELS)
