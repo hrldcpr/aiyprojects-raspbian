@@ -35,7 +35,9 @@ def shuffled(xs):
     return xs
 
 class Camura:
-    def __init__(self):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
         self.order = None
         self.writer = None
 
@@ -53,14 +55,14 @@ class Camura:
 
 class Server:
     def __init__(self):
-        self.camuras = {(x, y): Camura()
+        self.camuras = {(x, y): Camura(x, y)
                         for x in range(WIDTH) for y in range(HEIGHT)}
         self.level_index = 0
         self.reset_level()
 
-    def reset_camura(self, x, y, camura):
+    def reset_camura(self, camura):
         try:
-            camura.order = self.level.index((x, y))
+            camura.order = self.level.index((camura.x, camura.y))
         except ValueError:
             camura.order = None
         if camura.writer:
@@ -74,14 +76,14 @@ class Server:
         self.level = LEVELS[self.level_index](self.camuras)
         logging.info(f'level {self.level_index}: {self.level}')
         self.order = 0
-        for (x, y), camura in self.camuras.items():
-            self.reset_camura(x, y, camura)
+        for camura in self.camuras.values():
+            self.reset_camura(camura)
 
-    async def listen(self, x, y, reader, camura):
+    async def listen(self, camura, reader):
         while True:
             b = await reader.readexactly(1)
             if b == common.BUTTON_PRESSED:
-                logging.info(f'{x},{y} sent button press')
+                logging.info(f'{camura.x},{camura.y} sent button press')
                 if camura.order == self.order:
                     camura.write_lock()
                     camura.write_buzzer(NOTES[camura.order])
@@ -93,7 +95,7 @@ class Server:
                     camura.write_buzzer(FAIL_NOTES)
                     self.reset_level()
             else:
-                logging.warning(f'{x},{y} sent unknown kind {b}')
+                logging.warning(f'{camura.x},{camura.y} sent unknown kind {b}')
 
     async def connect(self, reader, writer):
         camura = x = y = None
@@ -113,12 +115,12 @@ class Server:
             camura.writer = writer
 
             if self.order == 0:
-                self.reset_camura(x, y, camura)
+                self.reset_camura(camura)
             else:
                 logging.warning('camura connected in middle of level, resetting level')
                 self.reset_level()
 
-            await self.listen(x, y, reader, camura)
+            await self.listen(camura, reader)
 
         except asyncio.IncompleteReadError:
             logging.warning(f'{x},{y} disconnected')
