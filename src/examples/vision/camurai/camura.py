@@ -57,7 +57,6 @@ class Camura:
         self.done.set()
 
     async def button_pressed(self):
-        if self.locked: return
         logging.info('button pressed')
         if not self.writer:
             logging.warning('no connection')
