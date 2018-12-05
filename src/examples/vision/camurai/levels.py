@@ -7,7 +7,7 @@ COLORS = [
     (0, 255, 0),
     (0, 255, 255),
 ]
-EMPTY_COLOR = (0, 255, 255)
+EMPTY_COLOR = (0, 0, 128)
 
 NOTES = ['C4eE4q', 'E4eG4q', 'G4eC5q', 'C5eC6q']
 FAIL_NOTES = 'E4e,A3q'
