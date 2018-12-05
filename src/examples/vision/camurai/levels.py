@@ -56,7 +56,7 @@ class Level1(SimpleLevel):
         super().__init__([(0, 0), (1, 1), (2, 2), (3, 3)])
 
 
-class Level2(Level1):
+class Level2(SimpleLevel):
     def __init__(self, xys):
         xys = list(xys)
         random.shuffle(xys)
