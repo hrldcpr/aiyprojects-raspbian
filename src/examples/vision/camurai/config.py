@@ -1,0 +1,2 @@
+WIDTH = 4
+HEIGHT = 4
