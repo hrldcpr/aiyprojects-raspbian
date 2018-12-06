@@ -8,6 +8,7 @@ COLORS = [
     (0, 255, 255),
 ]
 EMPTY_COLOR = (0, 0, 128)
+FADE = 0.5
 
 NOTES = ['C4eE4q', 'E4eG4q', 'G4eC5q', 'C5eC6q']
 FAIL_NOTES = 'E4e,A3q'
@@ -31,15 +32,25 @@ class SimpleLevel:
             pass
 
     def reset_camura(self, camura, lock=True):
-        if camura.writer:
-            order = self.get_order(camura)
-            camura.write_color(EMPTY_COLOR if order is None else COLORS[order])
-            if lock: camura.write_lock()
+        if not camura.writer: return
+
+        order = self.get_order(camura)
+        if order is None:
+            camura.write_color(EMPTY_COLOR)
+        else:
+            color = COLORS[order]
+            if lock:
+                camura.write_color((color.r * FADE, color.g * FADE,
+                                    color.b * FADE))
+                camura.write_lock()
+            else:
+                camura.write_color(color)
 
     def button_pressed(self, camura):
         """return True, False, or None"""
         order = self.get_order(camura)
         if order == self.progress:
+            camura.write_color(COLORS[order])
             camura.write_lock()
             camura.write_buzzer(NOTES[order])
             self.progress += 1
