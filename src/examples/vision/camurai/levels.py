@@ -38,13 +38,12 @@ class SimpleLevel:
         if order is None:
             camura.write_color(EMPTY_COLOR)
         else:
-            color = COLORS[order]
+            r, g, b = COLORS[order]
             if lock:
-                camura.write_color((color.r * FADE, color.g * FADE,
-                                    color.b * FADE))
+                camura.write_color((r * FADE, g * FADE, b * FADE))
                 camura.write_lock()
             else:
-                camura.write_color(color)
+                camura.write_color((r, g, b))
 
     def button_pressed(self, camura):
         """return True, False, or None"""

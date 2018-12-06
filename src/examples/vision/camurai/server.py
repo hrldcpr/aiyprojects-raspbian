@@ -26,7 +26,7 @@ class Camura:
         self.write(common.BUZZER_KIND, notes.encode())
 
     def write_color(self, color):
-        self.write(common.COLOR_KIND, bytes(color or ()))
+        self.write(common.COLOR_KIND, bytes(map(round, color) or ()))
 
     def write_lock(self):
         self.write(common.LOCK_KIND)
