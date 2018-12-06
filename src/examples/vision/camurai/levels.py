@@ -5,10 +5,10 @@ COLORS = [
     (255, 0, 0),
     (255, 255, 0),
     (0, 255, 0),
-    (0, 255, 255),
+    (0, 0, 255),
 ]
-EMPTY_COLOR = (0, 0, 128)
-FADE = 0.5
+EMPTY_COLOR = (128, 128, 128)
+FADE = 0.3
 
 NOTES = ['C4eE4q', 'E4eG4q', 'G4eC5q', 'C5eC6q']
 FAIL_NOTES = 'E4e,A3q'
