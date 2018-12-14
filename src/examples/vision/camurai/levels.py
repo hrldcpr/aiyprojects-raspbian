@@ -63,7 +63,7 @@ class SimpleLevel:
 class Level1(SimpleLevel):
     def __init__(self, xys):
         # TODO limit to connected camuras
-        super().__init__([(0, 0), (1, 1), (2, 2), (3, 3)])
+        super().__init__([(0, 0), (1, 1), (3, 3), (4, 4)])
 
 
 class Level2(SimpleLevel):
