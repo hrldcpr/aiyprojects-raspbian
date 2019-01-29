@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+import mido
+
 import common
 import config
 
@@ -20,11 +22,11 @@ ROW_COLORS = [
 ]
 
 ROW_NOTES = [
-    'C4e',
-    'D4e',
-    'E4e',
-    'G4e',
-    'A5e',
+    60,  # 'C4e',
+    62,  # 'D4e',
+    64,  # 'E4e',
+    67,  # 'G4e',
+    69,  # 'A4e',
 ]
 
 
@@ -55,6 +57,7 @@ class Server:
             for x in range(config.WIDTH) for y in range(config.HEIGHT)
         }
         self.enabled = set()
+        self.midi = mido.open_output()
 
     def get_camura(self, x, y):
         camura, = (c for c in self.camuras if c.x == x and c.y == y)
@@ -65,7 +68,9 @@ class Server:
             camura = self.get_camura(x, y)
             if not camura.writer: continue
             if (x, y) in self.enabled:
-                if active: camura.write_buzzer(ROW_NOTES[y])
+                self.midi.send(
+                    mido.Message(('note_on' if active else 'note_off'),
+                                 note=ROW_NOTES[y]))
             else:
                 camura.write_color((128, 128, 128) if active else None)
                 camura.write_lock()
@@ -78,6 +83,8 @@ class Server:
                 xy = (camura.x, camura.y)
                 if xy in self.enabled:
                     self.enabled.remove(xy)
+                    self.midi.send(
+                        mido.Message('note_off', note=ROW_NOTES[camura.y]))
                     camura.write_color(None)
                 else:
                     self.enabled.add(xy)
@@ -113,8 +120,8 @@ class Server:
         prev_x = None
         while True:
             for x in reversed(range(config.WIDTH)):
-                self.set_column(x, True)
                 if prev_x is not None: self.set_column(prev_x, False)
+                self.set_column(x, True)
                 prev_x = x
                 await asyncio.sleep(0.2)
 
