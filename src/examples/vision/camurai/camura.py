@@ -122,7 +122,7 @@ class Camura:
     async def async_main(self):
         reader, self.writer = await asyncio.open_connection(
             SERVER_ADDRESS, common.SERVER_PORT)
-        await asyncio.gather(self.listen(reader), self.camera_loop())
+        await asyncio.gather(self.listen(reader))  #, self.camera_loop())
 
     def run(self):
         signal.signal(signal.SIGINT, lambda signal, frame: self.stop())
